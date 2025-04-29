@@ -1,0 +1,35 @@
+image: docker:24.0.5
+services:
+  - docker:24.0.5-dind
+
+variables:
+  GIT_SSL_NO_VERIFY: "true"
+  SHORT_SHA: $CI_BUILD_REF
+  DOCKER_USER_NAME: $USERNAME_GIT_LAB
+  DOCKER_PASSWORD: $PASSWORD_GIT_LAB
+  BRANCH_NAME: $CI_COMMIT_REF_NAME
+
+stages:
+  - test
+  - package
+
+robot-test:
+  only:
+    - main
+  stage: test
+  script:
+    - docker login --username=$REGISTRY_USERNAME --password=$REGISTRY_PASSWORD mobydick.netbay.co.th
+    - docker build -t {{project_name}} .
+    - docker run --rm  --add-host={{hostname}}:{{private_ip}} --env-file env.list {{project_name}} robot --listener listener_email/EmailListener.py -V listener_email/config.py -d output testsuite
+
+api-package:
+  only:
+    - main
+  stage: package
+  script:
+    - docker login --username=$REGISTRY_USERNAME --password=$REGISTRY_PASSWORD mobydick.netbay.co.th
+    - docker build -t {{project_name}} .
+    - docker tag {{project_name}}:latest mobydick.netbay.co.th/qa/{{path_project_mobydick}}:latest
+    - docker tag {{project_name}}:latest mobydick.netbay.co.th/qa/{{path_project_mobydick}}:$SHORT_SHA
+    - docker push mobydick.netbay.co.th/qa/{{path_project_mobydick}}:latest
+    - docker push mobydick.netbay.co.th/qa/{{path_project_mobydick}}:$SHORT_SHA

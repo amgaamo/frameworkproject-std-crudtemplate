@@ -1,0 +1,6 @@
+*.html
+*output.xml
+*.jpeg
+*.log
+playwright-log.txt
+launch.json
