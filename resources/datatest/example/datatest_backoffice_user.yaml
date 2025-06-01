@@ -1,0 +1,47 @@
+# Test Scenarios for Backoffice Menu Data
+# -------------------------------------
+
+# Scenario: Fill in All Fields
+allfields:
+  title: 
+    value: "นาย"
+  name: 
+    value: "Robot{random:lower:3}"
+  lastname: 
+    value: "Last{random:lower:3}"
+  position: 
+    value: "สมาชิกพรรค"
+  email: 
+    value: "robot_{random:lower:3}@mail.co.th"
+  username: 
+    value: "botuser{random:lower:3}"
+  password:
+    value: "Netbay@123"
+  subdistrict:
+    value: "สี่พระยา"
+  district:
+    value: "บางรัก"
+  province:
+    value: "กรุงเทพ"
+  
+allfields:
+  title: 
+    value: "นาย"
+  name: 
+    value: "Robot{random:lower:3}"
+  lastname: 
+    value: "Last{random:lower:3}"
+  position: 
+    value: "สมาชิกพรรค"
+  email: 
+    value: "robot_{random:lower:3}@mail.co.th"
+  username: 
+    value: "botuser{random:lower:3}"
+  password:
+    value: "Netbay@123"
+  subdistrict:
+    value: "สี่พระยา"
+  district:
+    value: "บางรัก"
+  province:
+    value: "กรุงเทพ"  

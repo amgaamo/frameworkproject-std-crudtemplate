@@ -13,24 +13,25 @@ ${LOCATOR_TITLE_MODAL}          //*[@id="swal2-title"]
 ${LOCATOR_CONTENT_MODAL}        //*[@id="swal2-content"]
 
 ##### Modal Dialog Button #####
-${LOCATOR_MODAL_BTN}            //button[contains(text(),'::buttonname::')] 
+${LOCATOR_MODAL_BTN}            //button[(contains(normalize-space(.), '::buttonname::') and @type='button') or (contains(normalize-space(.), '::buttonname::') and contains(@class, 'ant-btn') and not(@nztype='primary'))] 
 
 #------------------------------------------------------------------#
 
 ${LOCATOR_LOADING_BTN}                //button[contains(text(),'Loading')]
 ${LOCATOR_LOADING}                    //div[contains(@class,"spinner-border")]
 
-${LOCATOR_USERNAME_FIELD}             //*[@id="login-username"]
-${LOCATOR_PASSWORD_FIELD}             //*[@id="login-password"]
-${LOCATOR_LOGIN_BTN}                  //*[contains(@class, "btn-login")]
+${LOCATOR_USERNAME_FIELD}             //*[@id="login-username" or @name="username"]
+${LOCATOR_PASSWORD_FIELD}             //*[@id="login-password" or @name="password"]
+${LOCATOR_LOGIN_BTN}                  //button[contains(@class, "btn-login") or translate(normalize-space(.), 'SIGN', 'sign') = 'sign in' or normalize-space(.) = 'Login' or normalize-space(.) = 'เข้าสู่ระบบ']
 
-${LOCATOR_WELCOME_TITLE}              //*[contains(@class,'user-profile')]
+${LOCATOR_WELCOME_TITLE}              (//*[contains(@class,'user-profile') or contains(@class,'avatar-circle') or contains(@id,'profileImage') or contains(@href,'home') or contains(@class,'photo_profile') or @data-icon='user'])[1]
 ${LOCATOR_HEADER_MENU}                //*[@id="header-menu-btn"]
 ${LOCATOR_MENULOGOUT}                 //*[contains(text(),'Logout')]
 
-${LOCATOR_ISEXPAND_SUBMENU}           //*[contains(@class,"ng-star-inserted show")]
-${LOCATOR_SIDEBAR_TOGGLE}             //*[@id="sidebar-toggle-btn"]
-${LOCATOR_SIDEBARPANEL}               //*[contains(@class,"menuleft-open")]
+${LOCATOR_ISEXPAND_SUBMENU}           (//*[contains(@class,"nav-item show") or contains(@class,"submenu-open")])[1]
+${LOCATOR_SIDEBAR_TOGGLE}             //*[@id="headerCollapse" or @id="sidebar-toggle-btn" or @id="minimizeSidebar" or contains(@class, "header-trigger") or contains(@class, "custom-trigger")]
+${LOCATOR_SIDEBARPANEL}               //*[contains(@class,"menuleft-open") or contains(@class, 'show-sidebar') or contains(@class, 'menu-fold')]
+${LOCATOR_SIDEBARPANEL_COLLAPSE}      //*[contains(@class,"sider-collapsed")]
 
 ${LOCATOR_CURRENT_PAGENAME}           //*[@aria-current="page"]
 
@@ -108,10 +109,14 @@ Convert Data to lower or upper case
     END  
     Set Global Variable     ${GLOBAL_DATACONVERT}
 
-Convert number to decimal format
-    [Arguments]    ${number}    ${point}=2
-         ${GLOBAL_FORMATTED_NUMBER}=    Evaluate    "{:,.${point}f}".format(float(${number}))
-         Set Global Variable    ${GLOBAL_FORMATTED_NUMBER}
+Convert Number To Decimal Format
+    [Arguments]    ${number}    ${point}=2    ${use_comma}=True
+    IF    ${use_comma}
+        ${GLOBAL_FORMATTED_NUMBER}=    Evaluate    "{:,.${point}f}".format(float(${number}))
+    ELSE
+        ${GLOBAL_FORMATTED_NUMBER}=    Evaluate    "{:.${point}f}".format(float(${number}))
+    END
+    Set Global Variable    ${GLOBAL_FORMATTED_NUMBER}
 
 #------------------------- Using for new tab or new windows --------------------------------#
 Get MAIN pageids for switch page
@@ -154,10 +159,11 @@ Switch Another Open Page
     [Arguments]      ${idpage}
       Sleep  1500ms
       Switch Page       ${idpage}       context=ALL         browser=ALL
+      Sleep  1500ms
 
 #--------------------- Using for Modal Yes/No/OK/Close Button ----------------------------------#
 Click Modal Button
-    [Arguments]     ${button_name}
+    [Arguments]     ${button_name}    ${timeout}=10s
 
       IF  '${button_name}'=='ใช่'
           ${locator_buttonmodal}=       Set Variable      //button[text()='ใช่']
@@ -167,8 +173,20 @@ Click Modal Button
           ${locator_buttonmodal}=       Replace String    ${LOCATOR_MODAL_BTN}    ::buttonname::    ${button_name}
       END
 
-      Wait For Elements State       ${locator_buttonmodal}    visible     timeout=50s
-      Click     ${locator_buttonmodal}
+      ${is_found_modal_btn}=     Run Keyword And Return Status     Wait For Elements State       ${locator_buttonmodal}    visible     timeout=${timeout}
+
+      IF    ${is_found_modal_btn}
+           Click     ${locator_buttonmodal}
+      ELSE
+           ${locator_buttonmodal}=       Remove String        ${locator_buttonmodal}        and not(@nztype='primary')
+           ${is_found_modal_btn}=        Run Keyword And Return Status     Wait For Elements State       ${locator_buttonmodal}    visible     timeout=${timeout}
+           
+           IF  ${is_found_modal_btn}
+               Click     ${locator_buttonmodal}
+           ELSE
+                Log    Modal button '${button_name}' not found.    console=True
+           END
+      END
 
 Verify Modal Title message
       [Arguments]    ${exp_titlemsg}
@@ -280,12 +298,23 @@ Click Login Button
 
 Ignore warning Login
       Wait For Elements State         ${LOCATOR_LOADING_BTN}        hidden         timeout=60
-      Sleep    500ms
-      ${LOCATOR_YES_MODAL}=    Replace String    ${LOCATOR_MODAL_BTN}    ::buttonname::    Yes
-      ${modal_is_show}=     Get Element States        ${LOCATOR_YES_MODAL}     then      bool(value & visible)
-      IF  '${modal_is_show}'=='True'
+      Sleep    1s
+      ${LOCATOR_YES_MODAL}=       Replace String            ${LOCATOR_MODAL_BTN}       ::buttonname::    Yes
+      ${LOCATOR_LOGIN_MODAL}=     Replace String            ${LOCATOR_MODAL_BTN}       ::buttonname::    เข้าสู่ระบบ
+      ${LOCATOR_CONFIRM_MODAL}=   Replace String            ${LOCATOR_MODAL_BTN}       ::buttonname::    Confirm
+      ${modal_is_show_yes}=       Get Element States        ${LOCATOR_YES_MODAL}       then      bool(value & visible)
+      ${modal_is_show_login}=     Get Element States        ${LOCATOR_LOGIN_MODAL}     then      bool(value & visible)
+      ${modal_is_show_confirm}=   Get Element States        ${LOCATOR_CONFIRM_MODAL}   then      bool(value & visible)
+
+      IF  '${modal_is_show_yes}'=='True'
           Wait For Elements State         ${LOCATOR_YES_MODAL}          visible       timeout=5s
           Click    ${LOCATOR_YES_MODAL} 
+      ELSE IF  '${modal_is_show_login}'=='True'
+          Wait For Elements State         ${LOCATOR_LOGIN_MODAL}          visible       timeout=5s
+          Click    ${LOCATOR_LOGIN_MODAL}    
+      ELSE IF  '${modal_is_show_confirm}'=='True'
+          Wait For Elements State         ${LOCATOR_CONFIRM_MODAL}          visible       timeout=5s
+          Click    ${LOCATOR_CONFIRM_MODAL}          
       END
 
 Verify Welcome page
@@ -315,8 +344,16 @@ Wait Loading progress
 Show Menu Side Parnel
     [Arguments]   ${menuname}
       Wait Loading progress
-      ${sidebar_is_visible}=     Get Element States        ${LOCATOR_SIDEBARPANEL}     then    bool(value & visible)
+          
+      ${sidebar_is_visible}=     Run Keyword And Return Status      Get Element States        ${LOCATOR_SIDEBARPANEL}     then    bool(value & visible)
       ${menu_is_visible}=        Get Element States        ${menuname}     then    bool(value & visible)
+      
+      IF    ${sidebar_is_visible}
+          Set Variable    ${sidebar_is_visible}    True
+      ELSE
+          ${sidebar_is_hidden}=     Run Keyword And Return Status   Get Element States        ${LOCATOR_SIDEBARPANEL_COLLAPSE}     then    bool(value & visible)
+          Set Variable    ${sidebar_is_visible}    False
+      END
 
       IF   '${sidebar_is_visible}'=='False' and '${menu_is_visible}'=='False'
             Click       ${LOCATOR_SIDEBAR_TOGGLE}
@@ -330,7 +367,6 @@ Show Menu Side Parnel
             Wait For Elements State       ${LOCATOR_SIDEBARPANEL}       visible     timeout=5s
 
       ELSE IF   '${sidebar_is_visible}'=='True' and '${menu_is_visible}'=='False'
-            Click     ${LOCATOR_SIDEBAR_TOGGLE}
             Wait For Elements State       ${LOCATOR_SIDEBARPANEL}       visible     timeout=5s
       ELSE
             Fail    Check Condition Keyword 'Show Menu Side Parnel'
@@ -358,9 +394,16 @@ Go to MENU name
 
 Go to SUBMENU name
       [Arguments]       ${main_menu}       ${submenu}
-      Wait For Elements State    ${homemenu}   visible         timeout=500ms
-      Click      ${homemenu}
-      Sleep   500ms
+      ${is_homemenu_visible}=    Run Keyword And Return Status      Wait For Elements State    ${homemenu}   visible         timeout=500ms
+      
+      IF  ${is_homemenu_visible}=='True'
+          Wait For Elements State        ${homemenu}     visible       timeout=10s
+          Click      ${homemenu}
+          Sleep   500ms
+      ELSE
+          Sleep   500ms
+      END
+
       Show Menu Side Parnel     ${main_menu}
 
       ${is_expand_submenu}=      Get Element States        ${LOCATOR_ISEXPAND_SUBMENU}        then    bool(value & visible)
@@ -419,27 +462,69 @@ Fill in search field
       ...       ELSE     Fail     Check condition keyword 'Fill in search field in list page' !!
 
 Fill in data form
-    [Arguments]    ${locator_field}     ${value}      ${sel_attr}=label      ${is_checkboxtype}=true    ${is_antdesign}=false
+    [Arguments]    ${locator_field}               ${value}                     ${sel_attr}=label      
+    ...            ${is_checkboxtype}=false       ${is_antdesign}=false        ${is_switchtype}=false    ${locator_switch_checked}=${EMPTY}  
+    
       ${TAGNAME}=     Get Property               ${locator_field}          tagName
       
       IF   '${is_antdesign}'=='true'
-            ${TYPE_VAL}=     Set Variable     text
+            ${has_type}=     Run Keyword And Return Status     Get Property      ${locator_field}          type
+            IF  '${has_type}'=='False'
+                ${TYPE_VAL}=     Set Variable     text
+            ELSE
+                ${TYPE_VAL}=     Get Property      ${locator_field}          type
+            END
       ELSE      
             ${TYPE_VAL}=    Get Property      ${locator_field}          type
       END
-
+ 
       IF    '${TAGNAME}' in ['INPUT','TEXTAREA'] and '${TYPE_VAL}' not in ['checkbox','radio']
+          ${is_disabled}=    Run Keyword And Return Status    Wait For Elements State    ${locator_field}    disabled    timeout=200ms
           IF   '${is_antdesign}'=='true'
-              Fill Text     ${locator_field}      ${value}
-              Wait Loading progress
-              Keyboard Key    press    Enter
+              ${is_autocomplete}=      Get Property      ${locator_field}          autocomplete
+              
+              IF    '${is_autocomplete}'=='' and '${TYPE_VAL}' not in ['file']
+                IF  '${is_disabled}'=='True'
+                    Log    ${locator_field} is disabled.    console=True
+                ELSE
+                    Wait For Elements State    ${locator_field}     editable    timeout=5s 
+                    Fill Text     ${locator_field}      ${value}
+                    Keyboard Key     press      Tab
+                    Wait Loading progress 
+                END   
+              
+              ELSE IF  '${TYPE_VAL}'=='file'
+                    Choose file to upload    ${locator_field}      ${value}
+      
+              ELSE
+                    Wait For Elements State    ${locator_field}     editable    timeout=5s 
+                    Type Text     ${locator_field}      ${value}    delay=500ms
+                    Wait Loading progress  
+                    Sleep   1s
+                    Wait For Elements State    (//*[contains(text(), '${value}') and contains(@class, 'select')])[1]    attached    timeout=2s
+                    keyboard Key     press      Enter
+                    Sleep    500ms
+                    Keyboard Key     press      Tab   
+              END
+
           ELSE
-              Fill Text     ${locator_field}      ${value}
+            IF  '${TYPE_VAL}'=='file'
+                Choose file to upload    ${locator_field}      ${value}
+            ELSE
+                IF  '${is_disabled}'=='True'
+                    Log   ${locator_field} is disabled.    console=True
+                ELSE
+                    Wait For Elements State    ${locator_field}     editable    timeout=5s 
+                    Fill Text     ${locator_field}      ${value}
+                    Keyboard Key     press      Tab
+                END
+                
+            END
           END
 
       ELSE IF   '${TAGNAME}'=='SELECT'
           IF  '${_loadingchecknetwork_}'=='true'
-              Wait Until Network Is Idle        timeout=30s
+              Wait For Load State       timeout=30s
           END
           Wait Until Keyword Succeeds    10x    2s 
           ...    Get Select Options      ${locator_field}      validate      any(v["${sel_attr}"] == "${value}" for v in value)
@@ -451,7 +536,7 @@ Fill in data form
           ELSE    
               ${is_check}=    Run Keyword And Return Status     Get Checkbox State     ${locator_field}    should be      True
               IF   '${is_check}'=='True'
-                  Log To Console      checkbox is already checked.
+                  Log      checkbox is already checked.    console=True
               ELSE
                   Click    ${locator_field}
               END
@@ -464,7 +549,7 @@ Fill in data form
           ELSE    
               ${is_check}=    Run Keyword And Return Status     Get Checkbox State     ${locator_field}    should be      False
               IF   '${is_check}'=='True'
-                  Log To Console      checkbox is already unchecked.
+                  Log      checkbox is already unchecked.    console=True
               ELSE
                   Click    ${locator_field}
               END
@@ -475,15 +560,32 @@ Fill in data form
           Click    ${locator_field}
           Get Checkbox State     ${locator_field}    should be      True
 
-      ELSE IF   '${TAGNAME}' in ('NZ-SELECT-ITEM','NZ-SELECT')
-          Click    ${locator_field} 
-          ${select_value}=    Replace String    //div[contains(text() ,'::value::')]    ::value::    ${value}
-          Click    ${select_value}
-          
+      ELSE IF   '${TAGNAME}' in ('NZ-SELECT-ITEM','NZ-SELECT')          
+                  Click    ${locator_field} 
+                  ${select_value}=    Replace String    //div[contains(text() ,'::value::')]    ::value::    ${value}
+                  Click    ${select_value}                        
           IF    '${TAGNAME}'== 'NZ-SELECT-ITEM'
               Get Attribute    ${locator_field}    title    should be    ${value}
           END
 
+      ELSE IF  '${is_switchtype}'=='true'
+            Should Be True    '${locator_switch_checked}' != ''
+            IF    '${value}' in ['Check','check','True','true','checked','Checked']
+                    ${is_check}=    Run Keyword And Return Status     Wait For Elements State    ${locator_switch_checked}    visible    timeout=500ms
+                    IF   '${is_check}'=='True'
+                        Log      \nSwitch is already checked.    console=True
+                    ELSE
+                        Click    ${locator_field}
+                    END
+            ELSE IF  '${value}' in ['Uncheck','uncheck','False','false','unchecked','Unchecked']
+                    ${is_check}=    Run Keyword And Return Status     Wait For Elements State    ${locator_switch_checked}    hidden    timeout=500ms
+                    IF   '${is_check}'=='True'
+                        Log      \nSwitch is already unchecked.    console=True
+                    ELSE
+                        Click    ${locator_field}
+                    END           
+            END
+      
       ELSE
           Fail    \nPlease Check Tagname (${TAGNAME}) and Type (${TYPE_VAL}) in locator not found in condition.
       END
@@ -532,47 +634,67 @@ Fill out data in form
 
 #--------------------- Keywords : Assertion and Get Data ---------------------#
 Verify data form
-    [Arguments]    ${locator_field}     ${assertion}    ${exp_value}    ${sel_attr}=label    ${ignorcase}=false     ${antdesign}=false
+    [Arguments]    ${locator_field}             ${assertion}        ${exp_value}       ${sel_attr}=label        ${ignorcase}=false     ${antdesign}=false    
+    ...            ${is_switchtype}=false       ${locator_switch_checked}=${EMPTY}     ${is_skipfield}=false
       
       @{tagname_list}=   Create List    
       ...        INPUT    SPAN        H1       H2   H3    H4    H5    H6    
       ...        DIV      TEXTAREA    LABEL    A    TH    TD    FONT
       
-      ${TAGNAME}=     Get Property    ${locator_field}    tagName
-      IF    '${TAGNAME}'=='INPUT' and '${antdesign}'=='false'
-            resourcekeywords.Check Type data field    ${locator_field}
-      ELSE     
-            Set Suite Variable       ${TYPE_VAL}         text
-      END
-
-      IF  '${TAGNAME}' in ${tagname_list} and '${TYPE_VAL}' not in ['radio','checkbox']
-        IF  '${ignorcase}'=='false'
-                ${GLOBAL_RETURNDATA_VALUE}=     Get Text    ${locator_field}    ${assertion}    ${exp_value}
-        ELSE
+      IF   '${is_switchtype}'=='true'
+            IF   '${exp_value}' in ['Check','check','True','true','checked','Checked']
+                Wait For Elements State    ${locator_switch_checked}    visible    timeout=2s
+                ${GLOBAL_RETURNDATA_VALUE}=    Set Variable     check
+            ELSE IF   '${exp_value}' in ['Uncheck','uncheck','False','false','unchecked','Unchecked']
+                Wait For Elements State    ${locator_switch_checked}    hidden     timeout=2s
+                ${GLOBAL_RETURNDATA_VALUE}=    Set Variable     uncheck
+            ELSE
                 ${GLOBAL_RETURNDATA_VALUE}=     Get Text    ${locator_field}
-                Should Contain    ${GLOBAL_RETURNDATA_VALUE}    ${exp_value}    ignore_case=True
-        END
-
-      ELSE IF   '${TAGNAME}'=='SELECT'
-            Wait Until Keyword Succeeds    10x    2s     
-            ...    Get Select Options    ${locator_field}      validate    any(v["${sel_attr}"] == "${exp_value}" for v in value)
-            ${GLOBAL_RETURNDATA_VALUE}=    Get Selected Options            ${locator_field}    ${sel_attr}     ${assertion}       ${exp_value}
-
-      ELSE IF   '${TYPE_VAL}' in ['radio','checkbox']
-          IF  '${TYPE_VAL}' in ['checkbox','radio'] and '${exp_value}' in ['Check','check','True','true']
-              ${GLOBAL_RETURNDATA_VALUE}=     Get Checkbox State     ${locator_field}    ${assertion}    True
-          ELSE IF  '${TYPE_VAL}'in ['checkbox','radio'] and '${exp_value}' in ['Uncheck',uncheck','False','false']
-              ${GLOBAL_RETURNDATA_VALUE}=     Get Checkbox State     ${locator_field}    ${assertion}    False
-          END
-      
-      ELSE IF  '${TYPE_VAL}'=='NZ-SELECT-ITEM'
-          ${GLOBAL_RETURNDATA_VALUE}=    Get Attribute    ${locator_field}    title    ${assertion}    ${exp_value}
-
+                Should Contain    ${GLOBAL_RETURNDATA_VALUE}    ${exp_value}    ignore_case=True                
+            END
+      ELSE IF   '${is_skipfield}'=='true'
+            Log   \nSkip Assertion for Locator: ${locator_field}.    console=True
       ELSE
-          Fail    \nPlease Check Tagname (${TAGNAME}) and Type (${TYPE_VAL}) in locator not found in condition.
-      END
+            ${TAGNAME}=     Get Property    ${locator_field}    tagName
+                IF    '${TAGNAME}'=='INPUT' and '${antdesign}'=='false'
+                        resourcekeywords.Check Type data field    ${locator_field}
+                ELSE     
+                        Set Suite Variable       ${TYPE_VAL}         text
+                END
 
+                IF  '${TAGNAME}' in ${tagname_list} and '${TYPE_VAL}' not in ['radio','checkbox']
+                    IF  '${ignorcase}'=='false'
+                            ${GLOBAL_RETURNDATA_VALUE}=     Get Text    ${locator_field}    ${assertion}    ${exp_value}
+                    ELSE
+                            ${GLOBAL_RETURNDATA_VALUE}=     Get Text    ${locator_field}
+                            Should Contain    ${GLOBAL_RETURNDATA_VALUE}    ${exp_value}    ignore_case=True
+                    END
+
+                ELSE IF   '${TAGNAME}'=='SELECT'
+                        Wait Until Keyword Succeeds    10x    2s     
+                        ...    Get Select Options    ${locator_field}      validate    any(v["${sel_attr}"] == "${exp_value}" for v in value)
+                        ${GLOBAL_RETURNDATA_VALUE}=    Get Selected Options            ${locator_field}    ${sel_attr}     ${assertion}       ${exp_value}
+
+                ELSE IF   '${TYPE_VAL}' in ['radio','checkbox']
+                    IF  '${TYPE_VAL}' in ['checkbox','radio'] and '${exp_value}' in ['Check','check','True','true','checked','Checked']
+                        ${GLOBAL_RETURNDATA_VALUE}=     Get Checkbox State     ${locator_field}    ${assertion}    True
+                    ELSE IF  '${TYPE_VAL}'in ['checkbox','radio'] and '${exp_value}' in ['Uncheck','uncheck','False','false','unchecked','Unchecked']
+                        ${GLOBAL_RETURNDATA_VALUE}=     Get Checkbox State     ${locator_field}    ${assertion}    False
+                    END
+                
+                ELSE IF  '${TAGNAME}'=='NZ-SELECT-ITEM'
+                     ${GLOBAL_RETURNDATA_VALUE}=    Get Attribute    ${locator_field}    title    ${assertion}    ${exp_value}
+                
+                ELSE IF  '${TAGNAME}'=='NZ-LIST-ITEM'
+                     ${GLOBAL_RETURNDATA_VALUE}=     Get Text    ${locator_field}
+                     Should Contain    ${GLOBAL_RETURNDATA_VALUE}    ${exp_value}    ignore_case=True
+                ELSE
+                    Fail    \nPlease Check Tagname (${TAGNAME}) and Type (${TYPE_VAL}) in locator not found in condition.
+                END
+      END
       Set Global Variable      ${GLOBAL_RETURNDATA_VALUE}
+      Log    \nVerify Field: ${GLOBAL_RETURNDATA_VALUE}__${assertion}__${exp_value}    console=True
+      
 
 Verify Warning message field
       [Arguments]    ${locator_field}     ${assertion}      ${expectedmsg}
@@ -689,7 +811,7 @@ Verify Result of data table
       ${amount_col}=      Get Length    ${colname}
 
       IF  '${amount_col}'=='0'
-          Fail      \nPlease Check Amount Column Table header (LOCATOR_THEAD) should greater than 0
+          Fail      \n No Result Data Table. \nPlease Check Amount Column Table header (LOCATOR_THEAD) should greater than 0
       ELSE
             FOR   ${index}    IN RANGE    ${amount_col}
                   ${indexval}=      Evaluate      ${index}+1
@@ -733,7 +855,7 @@ Verify result data table (Custom column)
                   Fail    \nPlease check assertion arg. should any 'should be' or 'contains'.
           END
     ELSE
-        Fail    Please check $ignorcase arg. should be 'true' or 'false' (default arg. is 'false')
+        Fail    \nPlease check $ignorcase arg. should be 'true' or 'false' (default arg. is 'false')
     END
 
     Set Global Variable      ${GLOBAL_RETURNDATA_COLUMN}
@@ -749,6 +871,7 @@ Verify data table result is No Record Found
       
       Wait For Elements State    ${locator_norecord}      visible       timeout=5s
       Get Text                   ${locator_norecord}      contains      ${msg_norecord}
+      Log    \nVerify data table result is No Record Found.    console=True
 
 Get Index Row for data table
     [Arguments]   ${locator_tbody}    ${column_index}     ${data_compare}
@@ -756,7 +879,7 @@ Get Index Row for data table
       Sleep   500ms
       ${is_record_no_data}=        Run Keyword And Return Status    Get Text    ${locator_tbody}/tr[1]/td[1]      should be       ${VAR_DEFAULT_NORECORDFOUND}
 
-      Run Keyword If    '${is_record_no_data}'=='False'    Get row entries of Data Table     ${locator_tbody}
+      Run Keyword If    '${is_record_no_data}'=='False'    resourcekeywords.Get row entries of Data Table     ${locator_tbody}
       ...       ELSE    Fail    No records found, please check data table.
       ...                       \nIf you want to verify no record found.
       ...                       Use Keyword : 'Verify data table result is No Record Found'
@@ -771,6 +894,35 @@ Get Index Row for data table
 
       Set Global Variable     ${GLOBAL_INDEXROWITEM}       ${INDEXITEM}
 
+
+#--------------------- Handle Data Card -------------------------------------------------------- #
+#  locator of card should be like pattern:                                                       #
+#  1. (id or name) >> [cardName]_[index]_[titlename]  ex. id="requestCard_0_statusLabel"]        #
+#  2. (id or name) >> [Titlename]-[index]   ex. id=gmnl-company-name-0                           #
+#----------------------------------------------------------------------------------------------- #
+Verify Result of Data Card
+    [Arguments]    ${cardtitle}    ${card_index}      ${ignorcase}    ${assertion}    ${expectedresult}   ${start_index}=0
+    ${amount_card}=        Get Element Count    //*[contains(@id, '${cardtitle}') or contains(@name, '${cardtitle}')]
+    
+    IF  '${card_index}'=='all'
+        ${card_index}=    Evaluate    ${amount_card}-1
+        FOR  ${index}    IN RANGE    ${start_index}    ${amount_card}
+            ${card_index}=    Evaluate    ${index}+${start_index}
+            Verify data form    
+            ...    locator_field=//*[(contains(@id, '${cardtitle}') or contains(@name, '${cardtitle}')) and contains(@id, '${card_index}')]    
+            ...    assertion=${assertion}
+            ...    ignorcase=${ignorcase}    
+            ...    exp_value=${expectedresult}
+        END
+    ELSE
+        ${card_index}=    Convert To Integer    ${card_index}
+        Verify data form    
+        ...    locator_field=//*[(contains(@id, '${cardtitle}') or contains(@name, '${cardtitle}')) and contains(@id, '${card_index}')]    
+        ...    assertion=${assertion}
+        ...    ignorcase=${ignorcase}    
+        ...    exp_value=${expectedresult}
+    END
+    
 
 #--------------------- Keywords : Action ---------------------#
 Click Expand Search Criteria
@@ -807,23 +959,23 @@ Choose file to upload
       Upload File By Selector    ${locator_choosefile}       ${pathfile}
 
 Download data and save file to download folder
-    [Arguments]     ${locator_download_btn}
+    [Arguments]     ${locator_download_btn}    ${folder_download}=${EXECDIR}${/}testsuite${/}_download_file
          ${dl_promise}        Promise To Wait For Download
          Click    ${locator_download_btn}
 
          ${file_obj}=           Wait For    ${dl_promise}
          File Should Exist      ${file_obj}[saveAs]
 
-         Create Directory       ${EXECDIR}${/}testsuite${/}_download_file
-         Empty Directory        ${EXECDIR}${/}testsuite${/}_download_file
-         Move File              ${file_obj}[saveAs]      ${EXECDIR}${/}testsuite${/}_download_file
+         Create Directory       ${folder_download}
+         Empty Directory        ${folder_download}
+         Move File              ${file_obj}[saveAs]      ${folder_download}
 
-         ${filename}=           List Files In Directory    ${EXECDIR}${/}testsuite${/}_download_file
+         ${filename}=           List Files In Directory    ${folder_download}
 
-         Move File              ${EXECDIR}${/}testsuite${/}_download_file${/}${filename}[0]      ${EXECDIR}${/}testsuite${/}_download_file${/}${file_obj.suggestedFilename}
+         Move File              ${folder_download}${/}${filename}[0]      ${folder_download}${/}${file_obj.suggestedFilename}
 
-         Set Global Variable    ${GLOBAL_PATHFILE}      ${EXECDIR}${/}testsuite${/}_download_file${/}${file_obj.suggestedFilename}
-         Set Global Variable    ${GLOBAL_PATHDIR}       ${EXECDIR}${/}testsuite${/}_download_file
+         Set Global Variable    ${GLOBAL_PATHFILE}      ${folder_download}${/}${file_obj.suggestedFilename}
+         Set Global Variable    ${GLOBAL_PATHDIR}       ${folder_download}
 
 Clear Directory download file
     [Arguments]     ${pathdir}
@@ -845,10 +997,9 @@ Click Button and Handle confirmation alert
       
 Click Button and Verify message alert dialog
     [Arguments]   ${locator}      ${text}
-
-      ${promise} =       Promise To    Wait For Alert    action=accept    text=${text}
-      Click              ${locator}
-      ${text} =          Wait For      ${promise}
+     ${promise} =        Promise To    Wait For Alert    action=accept
+     Click               ${locator}
+     ${text} =            Wait For      ${promise}
 
 Click Button and Get message alert dialog
     [Arguments]   ${locator}
@@ -857,6 +1008,11 @@ Click Button and Get message alert dialog
       ${GLOBAL_ALERTMSG}=          Wait For      ${promise}
 
       Set Global Variable     ${GLOBAL_ALERTMSG}
+
+Click Button and Prompt input alert dialog
+    [Arguments]   ${locator}      ${input_text}
+          ${promise} =        Promise To    Wait For Alert    action=accept    prompt_input=${input_text}
+          Click                ${locator}
 
 #--------------------- Keywords : Paging Function ---------------------#
 
@@ -878,3 +1034,190 @@ Pagination Link is visible
            ${LOCATOR_SHOWINGPAGE_LINK}=    Replace String    ${LOCATOR_PAGINATION_LINK}    ::PAGENUM::    ${indexpage}
            Wait For Elements State         ${LOCATOR_PAGINATION_LINK}      visible        timeout=20
       END
+
+
+#------------------------------------------------------------------------#
+#  Common Keywords For Utillity keyword                                  #
+#------------------------------------------------------------------------#
+Fill In All Fields In Form
+    [Arguments]    @{field_sets}    ${is_ant_design}=false
+
+    FOR    ${field}    IN    @{field_sets}  
+        ${locator_field}=           Set Variable    ${field}[locator_field]
+        ${value}=                   Set Variable    ${field}[value]
+        ${sel_attr}=                Set Variable    ${field}[select_attr]
+        ${is_checkboxtype}=         Set Variable    ${field}[is_checkboxtype]
+        ${is_switchtype}=           Set Variable    ${field}[is_switchtype]
+        ${locator_switch_checked}=  Set Variable    ${field}[locator_switch_checked]
+        ${field_state}=             Set Variable    ${field}[field_state]
+        ${wait_field}=              Set Variable    ${field}[wait_field]
+
+        ${is_valid}=              Run Keyword And Return Status    Should Not Be Equal As Strings    ${value}            HIDDEN_FIELD
+        ${state_is_editable}=     Run Keyword And Return Status    Should Be Equal As Strings        ${field_state}      editable
+        
+        IF   '${wait_field}'!=''  
+               Sleep    ${wait_field}
+        END
+
+        IF    ${is_valid} and ${state_is_editable}
+            commonkeywords.Wait Loading progress
+            IF  '${is_switchtype}'!='true'
+                Wait For Elements State    selector=${locator_field}    state=attached    timeout=10s
+            END
+            commonkeywords.Fill in data form    
+            ...    locator_field=${locator_field}    
+            ...    value=${value}
+            ...    sel_attr=${sel_attr}
+            ...    is_checkboxtype=${is_checkboxtype}
+            ...    is_antdesign=${is_ant_design}
+            ...    is_switchtype=${is_switchtype}
+            ...    locator_switch_checked=${locator_switch_checked}
+        ELSE IF   '${field_state}'=='disabled'
+            commonkeywords.Verify Field State    ${locator_field}    disabled
+        ELSE IF   '${field_state}'=='readonly'
+            commonkeywords.Verify Field State    ${locator_field}    readonly
+        END
+
+        Log    \nFill in field: ${locator_field}__${value}        console=True
+    END
+
+
+Click Button and Handle Modal Dialog
+    [Arguments]    ${locator_btn}    ${modal_dialog_btn}
+
+    @{MODAL_BUTTON_TEXTS}=    Create List    OK    ตกลง    ปิด    Close
+    commonkeywords.Click button on detail page    ${locator_btn}
+
+    # กรณีที่ไม่ต้องการคลิกปุ่ม Modal Dialog หรือต้องการ "By Pass"
+    IF    '${modal_dialog_btn}' == ''
+        Log To Console    \nBy Pass Modal Dialog Success
+        commonkeywords.Wait Loading progress
+    # กรณีที่ระบุปุ่ม Modal Dialog ที่ต้องการคลิก
+    ELSE IF    '${modal_dialog_btn}' != ''
+        commonkeywords.Click Modal Button    ${modal_dialog_btn}
+        
+        ${modal_length}=    Get Length    ${MODAL_BUTTON_TEXTS}
+        FOR  ${index}    IN RANGE      ${modal_length}
+            ${modal_btn_text}=    Set Variable    ${MODAL_BUTTON_TEXTS}[${index}]
+            ${is_found}=          Run Keyword And Return Status   commonkeywords.Click Modal Button    ${modal_btn_text}    timeout=500ms
+            IF   '${is_found}'=='True'
+                commonkeywords.Click Modal Button   ${modal_btn_text}       timeout=500ms
+                Log To Console    \nClick Modal Dialog Button: ${modal_btn_text} Success
+            END
+        END
+    END
+        
+
+Filter Search Data And Verify Results
+    [Arguments]    @{field_sets}            ${locator_search_btn}     
+    ...            ${list_locator_thead}    ${list_locator_tbody}    ${list_rowdata}    ${list_ignorcase}    ${Search_for}     ${no_record_found}=found_record
+        
+        commonkeywords.Wait Loading progress
+    
+        ${listpage_values}=    Evaluate    [field for field in $field_sets for l in field.keys() if l.startswith('listpage')]
+        ${search_values}=      Evaluate    [field for field in $field_sets for s in field.keys() if s.startswith('search')]
+        
+        Log Many    ${listpage_values}
+        Log Many    ${search_values}
+        ${is_search_enter}=    Run Keyword And Return Status    Should Not Be Equal As Strings    ${locator_search_btn}    Enter
+
+        commonkeywords.Wait Loading progress
+        FOR    ${field_search}    IN    @{search_values}
+            ${is_value_original}=    Run Keyword And Return Status    Set Variable    ${field_search['value_original']}
+                
+            IF    '${is_value_original}'=='True' and '${search_for}'=='create'
+                    ${value}=    Set Variable    ${field_search}[value_original]
+            ELSE
+                    ${value_update}=    Set Variable        ${field_search}[value]
+                    ${value}=           Set Variable If    '${value_update}'=='disabled'      ${field_search}[value_original]        ${field_search}[value]
+            END
+
+            ${search_locator}=          Set Variable        ${field_search}[search_locator]
+            ${search_assert}=           Set Variable        ${value}
+
+            commonkeywords.Fill in search field             ${search_locator}       ${search_assert}
+        END
+
+        Run Keyword If      ${is_search_enter}    commonkeywords.Click button on list page        ${locator_search_btn}    
+        ...        ELSE     Keyboard Key    press    Enter
+
+        ${is_found_record}=    Run Keyword And Return Status    Should Be Equal As Strings    ${no_record_found}    found_record
+        IF   ${is_found_record} and ('${search_for}'=='create' or '${search_for}'=='delete' or '${search_for}'=='update')
+            FOR    ${field}    IN    @{listpage_values}
+
+                ${is_value_original}=    Run Keyword And Return Status    Set Variable    ${field['value_original']}
+                    
+                IF    '${is_value_original}'=='True' and '${search_for}'=='create'
+                        ${value}=    Set Variable    ${field}[value_original]
+                ELSE
+                        ${value_update}=    Set Variable        ${field}[value]
+                        ${value}=           Set Variable If    '${value_update}'=='disabled'      ${field}[value_original]        ${field}[value]
+                END
+
+                ${list_field}=             Set Variable    ${field}[listpage_field]
+                ${list_field_assert}=      Set Variable    ${value}
+                    
+
+                commonkeywords.Verify Result of data table    ${list_locator_thead}    ${list_locator_tbody}    ${list_rowdata}    ${list_ignorcase}  
+                ...    col.${list_field}=${list_field}    
+                ...    assert.${list_field}=contains
+                ...    expected.${list_field}=${list_field_assert}
+            END   
+        ELSE
+            ${is_record_no_data}=        Run Keyword And Return Status    commonkeywords.Verify data table result is No Record Found    ${list_locator_tbody}      ${no_record_found}
+            IF    ${is_record_no_data}  
+                  commonkeywords.Verify data table result is No Record Found    ${list_locator_tbody}      ${no_record_found}
+            ELSE
+                  Log    \nWarning: Search for is ${Search_for} >> Check ${Search_for} in ('create','delete','update')         console=True
+                  commonkeywords.Verify Field State        ${no_record_found}        visible
+            END
+        END 
+
+
+Validate All Fields In Form
+    [Arguments]    @{field_sets}    ${is_ant_design}=false
+
+            FOR    ${field}    IN    @{field_sets}   
+                ${locator_view}=            Set Variable    ${field}[locator_view]
+                ${value}=                   Set Variable    ${field}[value]
+                ${sel_attr}=                Set Variable    ${field}[select_attr]
+                ${assert}=                  Set Variable    ${field}[assert]
+                ${is_checkboxtype}=         Set Variable    ${field}[is_checkboxtype]
+                ${is_switchtype}=           Set Variable    ${field}[is_switchtype]
+                ${locator_switch_checked}=  Set Variable    ${field}[locator_switch_checked]
+                ${skip_verify_field}=       Set Variable    ${field}[skip_verify_field]
+                ${field_state}=             Set Variable    ${field}[field_state]
+
+
+                ${is_value_view}=    Run Keyword And Return Status    Set Variable    ${field['value_view']}
+                
+                IF    '${is_value_view}'=='True'
+                    ${value}=    Set Variable    ${field}[value_view]
+                ELSE
+                    ${value}=    Set Variable    ${field}[value]
+                END
+                ${is_valid}=              Run Keyword And Return Status    Should Not Be Equal As Strings    ${value}                    HIDDEN_FIELD
+                ${state_is_disabled}=     Run Keyword And Return Status    Should Be Equal As Strings        ${field_state}              disabled
+                ${state_is_readonly}=     Run Keyword And Return Status    Should Be Equal As Strings        ${field_state}              readonly
+                ${is_value_original}=          Run Keyword And Return Status    Set Variable                      ${field['value_original']}
+
+                IF  (${state_is_disabled} or ${state_is_readonly}) and ${is_value_original}
+                    ${value}=    Set Variable    ${field}[value_original]
+                END
+
+                IF  ${is_valid}
+                    commonkeywords.Wait Loading progress
+                    Wait For Elements State    selector=${locator_view}    state=attached    timeout=10s
+                    commonkeywords.Verify data form    
+                    ...    locator_field=${locator_view}
+                    ...    assertion=${assert}    
+                    ...    exp_value=${value}
+                    ...    sel_attr=${sel_attr}
+                    ...    antdesign=${is_ant_design}
+                    ...    is_switchtype=${is_switchtype}
+                    ...    locator_switch_checked=${locator_switch_checked}
+                    ...    is_skipfield=${skip_verify_field}
+                ELSE
+                    Log    \nSkip Assertion for Locator: ${locator_view}.    console=True
+                END
+            END

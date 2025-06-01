@@ -1,0 +1,64 @@
+# Test Scenarios for Menu Data
+# -------------------------------------
+
+# Scenario: Switch Submenu ON
+switchsubmenu_on:
+  menuname: 
+    value: "Test New Sub Menu{random:digits:3}"
+  menuurl: 
+    value: "/menutest/test{random:digits:3}"
+  menuicon: 
+    value: "icnon-test"
+  menunumber: 
+    value: "11"
+  switchsubmenu: 
+    value: "check"
+  mainparameter: 
+    value: "Configuration"
+  
+# Scenario: Switch Submenu OFF
+switchsubmenu_off:
+  menuname: 
+    value: "Test New Menu{random:digits:3}"
+  menuurl: 
+    value: "/menutest/maintest{random:digits:3}"
+  menuicon: 
+    value: "icnon-test"
+  menunumber: 
+    value: "4"
+  switchsubmenu: 
+    value: "uncheck"
+  mainparameter: 
+    value: "HIDDEN_FIELD"
+  
+
+# Scenario: Switch Submenu OFF to ON
+switchsubmenu_on_update:
+  menuname: 
+    value: "Test update Sub Menu X{random:digits:3}"
+  menuurl: 
+    value: "/menutest/updatetestx{random:digits:3}"
+  menuicon: 
+    value: "icnon-testx-update"
+  menunumber: 
+    value: "22"
+  switchsubmenu: 
+    value: "check"
+  mainparameter: 
+    value: "Register Management"
+  
+# Scenario: Switch Submenu ON to OFF
+switchsubmenu_off_update:
+  menuname: 
+    value: "X Update Menu{random:digits:3}"
+  menuurl: 
+    value: "/menutest/xupdatetest{random:digits:3}"
+  menuicon: 
+    value: "icnon-test-xupdate"
+  menunumber: 
+    value: "99"
+  switchsubmenu: 
+    value: "uncheck"
+  mainparameter: 
+    value: "HIDDEN_FIELD" 
+     

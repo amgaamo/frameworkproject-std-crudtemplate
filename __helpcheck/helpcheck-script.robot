@@ -1,5 +1,6 @@
 *** Settings ***
 Resource          ../resources/commonkeywords.resource
+Resource          ../resources/services/utility-services.resource
 
 Suite Setup       datasources.Import DataSource USER LOGIN
 Test Setup        commonkeywords.Initialize System and Go to Login Page
@@ -17,17 +18,12 @@ Helpcheck Login system
       Log To Console      \nhelpcheck status PASS.
 
 Helpcheck Call API service
-      # Log To Console      \n+++ helpcheck API Request by BrowserLib +++
-      # main-services.Request Service Get Session Data    ${DS_LOGIN['superadmin'][${login_col.username}]}      ${DS_LOGIN['superadmin'][${login_col.password}]}
-      # Should Be Equal    ${GLOBAL_APIUSERNAME}          ${DS_LOGIN['superadmin'][${login_col.username}]}
-      # service-profile.Request Service Logout System     ${DS_LOGIN['superadmin'][${login_col.username}]}      ${DS_LOGIN['superadmin'][${login_col.password}]}
-      # Log To Console      \nhelpcheck API Request by BrowserLib status PASS.
-
       Log To Console      \n+++ helpcheck API Request by RequestLib +++
       main-services.Request Service RequestLib Get Session Data    ${DS_LOGIN['superadmin'][${login_col.username}]}      ${DS_LOGIN['superadmin'][${login_col.password}]}
       Should Be Equal    ${GLOBAL_APIUSERNAME}          ${DS_LOGIN['superadmin'][${login_col.username}]}
       Request Service Logout System (RequestLib)        ${DS_LOGIN['superadmin'][${login_col.username}]}      ${DS_LOGIN['superadmin'][${login_col.password}]}
       Log To Console      \nhelpcheck API Request by RequestLib status PASS.
+
 
 Helpcheck Go to menu
       commonkeywords.Login System                   ${DS_LOGIN['superadmin'][${login_col.username}]}      ${DS_LOGIN['superadmin'][${login_col.password}]}

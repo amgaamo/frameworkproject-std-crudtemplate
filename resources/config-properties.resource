@@ -18,7 +18,7 @@ ${VAR_API_SUBDIRECTORY}     usermanagement-api
 #  ${_concurrentmode_}  >>  true = Run concurrent mode  /   false = Run single mode               #
 #  ${_loadingchecknetwork_}  >> true= Use keyword "wait until network is idle"                    #
 #-------------------------------------------------------------------------------------------------#
-${_headlessmode_}           true
+${_headlessmode_}           false
 ${_fixdata_}                true
 ${_concurrentmode_}         false
 ${_loadingchecknetwork_}    true

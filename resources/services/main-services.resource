@@ -18,13 +18,9 @@ Set Path Request URL
     Set Global Variable         ${SERVICE_LOGOUT_PATH}            ${URLTEST}/${API_URLPATH_TEST}/${VAR_PATH_LOGOUT}
 
 Create Headers Authen Service
-   [Arguments]    ${headeruser}=${EMPTY}    ${headerpwd}=${EMPTY}     ${type}=headers_simple     ${content-type}=application/json    ${token}=${EMPTY}
+   [Arguments]    ${headeruser}=${EMPTY}    ${headerpwd}=${EMPTY}     ${type}=headers_simple     ${content-type}=application/json    ${token}=${EMPTY}        &{custom_headers}
 
-    # IF  '${type}'=='headers_authuser'
-    #       Request Service Get Session Data    ${headeruser}       ${headerpwd}
-    #       ${GLOBAL_APIAUTH_HEADERS}=          Create Dictionary        Content-Type=${content-type}       uid=${GLOBAL_APIUID}      ucode=${GLOBAL_APIUCODE}
-    
-    IF   '${type}'=='headers_authuser_reqlib'
+    IF   '${type}'=='headers_authuser'
           Request Service RequestLib Get Session Data    ${headeruser}       ${headerpwd}
           ${GLOBAL_APIAUTH_HEADERS}=          Create Dictionary        Content-Type=${content-type}       uid=${GLOBAL_APIUID}      ucode=${GLOBAL_APIUCODE}
 
@@ -33,111 +29,13 @@ Create Headers Authen Service
     
     ELSE IF   '${type}'=='headers_auth_bearer'
           ${GLOBAL_APIAUTH_HEADERS}=          Create Dictionary        Content-Type=${content-type}       Authorization=Bearer ${token}
+    ELSE IF   '${type}'=='custom_headers'
+          ${GLOBAL_APIAUTH_HEADERS}=          Create Dictionary        &{custom_headers}
     ELSE
-        Fail    \nPlease Check type arg. should any 'headers_ucode' or 'headers_simple' or 'headers_auth_bearer'
+        Fail    \nPlease Check type arg. should any 'headers_ucode' or 'headers_simple' or 'headers_auth_bearer or 'custom_headers'!
     END
 
     Set Global Variable            ${GLOBAL_APIAUTH_HEADERS}
-
-
-###---------------------------------------------------------###
-#       Keywords for Requests HTTP by Browser Lib             #
-###---------------------------------------------------------###
-
-# Create Session Request Service
-#     [Arguments]     ${url}      ${is_credentials}=false    ${username_auth}=${EMPTY}    ${password_auth}=${EMPTY}
-
-#       ${browserIds}=        Get Browser Ids    ALL
-#       ${browserIds_notexist}=    Run Keyword And Return Status     Should Be True        '${browserIds}'=='[]'
-
-#       IF  '${browserIds_notexist}'=='False'
-#           commonkeywords.Get MAIN pageids for switch page
-#           ${current_url}=        Get Url
-#           ${current_url}=        Get Regexp Matches               ${current_url}        ([^\/]+\.[^\/]+)
-#           ${current_url}=        Remove String Using Regexp       ${current_url}[1]     /[^\/]+
-
-#           ${request_url}=        Get Regexp Matches               ${url}                ([^\/]+\.[^\/]+)
-#           ${request_url}=        Remove String Using Regexp       ${request_url}[1]     /[^\/]+
-
-#           ${is_samereq_url}=     Run Keyword And Return Status     Should Be Equal     ${request_url}     ${current_url}
-
-#           IF  '${is_samereq_url}'=='True' and '${is_credentials}'=='false'
-#               Log To Console    \nBrowser is open and the same url domain.
-#           ELSE
-#               commonkeywords.Get MAIN pageids for switch page
-#               Open New Browser for http request    ${url}     ${is_credentials}    ${username_auth}    ${password_auth}
-#               commonkeywords.Get Information New Page Open
-#               commonkeywords.Switch Another Open Page    ${GLOBAL_NEWPAGE}
-#           END
-#       ELSE
-#           Open New Browser for http request    ${url}     ${is_credentials}    ${username_auth}    ${password_auth}
-#       END
-
-
-# Open New Browser for http request
-#     [Arguments]   ${url}     ${is_credentials}   ${username_auth}    ${password_auth}
-#       Run Keyword If   '${VAR_BROWSER}'=='chrome'     New Browser     browser=chromium    headless=${_headlessmode_}    channel=chrome
-#       ...    ELSE IF   '${VAR_BROWSER}'=='msedge'     New Browser     browser=chromium    headless=${_headlessmode_}    channel=msedge
-#       ...    ELSE IF   '${VAR_BROWSER}'=='chromium'   New Browser     browser=chromium    headless=${_headlessmode_}
-#       ...    ELSE IF   '${VAR_BROWSER}'=='firefox'    New Browser     browser=firefox     headless=${_headlessmode_}
-
-#       Sleep    1500ms
-
-#       IF  '${is_credentials}'=='false'
-#           New Context        ignoreHTTPSErrors=True
-#       ELSE IF  '${is_credentials}'=='true'
-#           ${credentials}=    Create Dictionary           username=$username_auth     password=$password_auth
-#           New Context        ignoreHTTPSErrors=True      httpCredentials=${credentials}
-#       ELSE
-#           Fail    \nPlease Check $is_credentials arg. should any 'true' or 'false'
-#       END
-
-#       New Page
-#       Go To       ${url}
-#       Set Viewport Size     1280    760
-#       Sleep    1s
-
-# Close Session Request Service and switch to main page
-#     [Arguments]     ${url}
-#       ${mainpageIds_is_exist}=      Run Keyword And Return Status    Should Be True     '${GLOBAL_MAINPAGE}'!=''
-#       ${current_url}=               Get Url
-#       ${is_sameurl}=                Run Keyword And Return Status    Should Be True     '${url}'=='${current_url}'
-
-#       IF  '${mainpageIds_is_exist}'=='True' and '${is_sameurl}'=='False'
-#           commonkeywords.Switch Another Open Page    ${GLOBAL_MAINPAGE}
-#       ELSE IF  '${mainpageIds_is_exist}'=='True' and '${is_sameurl}'=='True'
-#           Close Page
-#           Sleep    700ms
-#           Log To Console    \nClose Session Request Success.
-#           Switch Another Open Page    ${GLOBAL_MAINPAGE} 
-#       ELSE
-#         #   Close Page
-#         #   Sleep    700ms
-#           Log To Console    \nClose Session Request Success.
-#       END
-
-# Request Service Get Session Data
-#     [Arguments]     ${username}     ${password}
-
-#     Set Path Request URL
-#     Create Session Request Service    ${SERVICE_GETSESSION_PATH}
-
-#     ${bodydata}=    Catenate       {"username": "${username}", "password": "${password}"}
-
-#     &{resp_getsession}=       HTTP     ${SERVICE_GETSESSION_PATH}     method=POST       body=${bodydata}
-
-#     Set Local Variable        ${status_val}       ${resp_getsession.body.status}
-#     Should Be Equal           ${status_val}       success
-
-#     Run Keyword If    '${status_val}'=='success'
-#     ...               Run Keywords        Set Global Variable         ${GLOBAL_APIUID}         ${resp_getsession.body.data.uid}
-#     ...               AND                 Set Global Variable         ${GLOBAL_APIUCODE}       ${resp_getsession.body.data.ucode}
-#     ...               AND                 Set Global Variable         ${GLOBAL_APIUSERNAME}    ${resp_getsession.body.data.username}
-#     ...               AND                 Set Global Variable         ${GLOBAL_APICPID}        ${resp_getsession.body.data.cpid}
-#     ...               AND                 Set Global Variable         ${GLOBAL_APIGID}         ${resp_getsession.body.data.gid}
-#     ...       ELSE    Fail                Please check request service get session keyword!
-
-#     Close Session Request Service and switch to main page    ${SERVICE_GETSESSION_PATH}
 
 
 ###---------------------------------------------------------###
@@ -181,7 +79,9 @@ Request Service Method
     ELSE
         Log To Console        \nResponse body is not JSON Format.
     END
-
+    
+    Set Global Variable    ${GLOBAL_REQUEST_HEADERS}    ${response.request.headers}
+    Set Global Variable    ${GLOBAL_REQUEST_BODY}       ${response.request.body}
     Log    \nRequest Headers: ${response.request.headers}\nRequest Body: ${response.request.body}
 
 Request Service RequestLib Get Session Data

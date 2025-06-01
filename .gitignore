@@ -2,5 +2,5 @@
 *output.xml
 *.jpeg
 *.log
-playwright-log.txt
+playwright-log*.txt
 launch.json

@@ -1,0 +1,39 @@
+# Test Scenarios for Register Data
+# -------------------------------------
+
+# Scenario: Register Juristic
+juristic_register:
+  registype: 
+    value: "Juristic"
+  taxid: 
+    value: "12{random:digits:4}7890123"
+  branch: 
+    value: "00000"
+  companyname: 
+    value: "Test Company {random:lower:3} Limited"
+  houseno: 
+    value: "123/23"
+  moo: 
+    value: "4"
+  building: 
+    value: "Test Data {random:lower:3} Building"
+  soi: 
+    value: "Test Soi"
+  street: 
+    value: "Test Street"
+  subdistrict: 
+    value: "สี่พระยา"
+  phone: 
+    value: "0123456789"
+  email: 
+    value: "test{random:lower:3}@testmail.com"
+  contactname: 
+    value: "Supakorn"
+  contactlastname:
+    value: "Sawangsri"
+  contactphone:
+    value: "0123456789"
+  contactemail:
+    value: "test{random:lower:3}@testmail.com"
+  username:
+    value: "usrbot{random:digits:3}"

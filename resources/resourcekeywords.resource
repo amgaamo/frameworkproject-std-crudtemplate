@@ -9,6 +9,7 @@ Library     DateTime
 Library     JSONLibrary
 Library     pabot.PabotLib
 Library     ImapLibrary2
+Library     yaml
 
 Resource    config-properties.resource
 Resource    datasources.resource
@@ -136,7 +137,7 @@ verify result data table
                     
               ELSE
                     ${return_val}=      Get Text      ${locator_tbody}/tr[${rowdata}]/td[${column_index}]     ${assertion}         ${expected_data}
-                    Log To Console      \nverify result datatable(${column_index}): ${return_val}_${assertion}_${expected_data}
+                    Log      \nverify result datatable(${column_index}): ${return_val}_${assertion}_${expected_data}    console=True
               END
                 Insert Into List    ${GLOBAL_RETURNDATA_RESULT}    ${index}     ${return_val}
 
@@ -152,10 +153,10 @@ verify result data table
                     ${return_val}=        Remove String Using Regexp    ${return_val}       ^[ \t]+|[ \t]+$
                     ${expected_data}=     Remove String Using Regexp    ${expected_data}    ^[ \t]+|[ \t]+$
                     Should Be Equal       ${return_val}       ${expected_data}       ignore_case=True
-                    Log To Console        \nverify result datatable(${column_index}): ${return_val}_${assertion}_${expected_data}
+                    Log       \nverify result datatable(${column_index}): ${return_val}_${assertion}_${expected_data}    console=True
                 ELSE IF   '${assertion}'=='contains'
                     Should Contain      ${return_val}       ${expected_data}       ignore_case=True
-                    Log To Console        \nverify result datatable(${column_index}): ${return_val}_${assertion}_${expected_data}
+                    Log       \nverify result datatable(${column_index}): ${return_val}_${assertion}_${expected_data}    console=True
                 ELSE
                     Fail    \nPlease check assertion arg. should any 'should be' or 'contains'.
                 END
@@ -200,5 +201,7 @@ Get row entries of Data Table
             Set Global Variable     ${GLOBAL_ENTRIES_RESULTOFPAGE}
       ELSE
             Set Global Variable     ${GLOBAL_ENTRIES_RESULTOFPAGE}          0
-            Log To Console    \nCannot get row entries: ${msg_norecord}
+            Log    \nCannot get row entries: ${msg_norecord}    console=True
       END
+
+

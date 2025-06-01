@@ -1,0 +1,69 @@
+# Test Scenarios for Backoffice Menu Data
+# -------------------------------------
+
+# Scenario: Fill in All Fields
+allfields:
+  email: 
+    value: "robottest{random:lower:3}@mail.com"
+  name: 
+    value: "Robot{random:lower:3}"
+  lastname: 
+    value: "Last{random:lower:3}"
+  status: 
+    value: "check"
+    value_view: "ใช้งาน"
+  doc2signcheck: 
+    value: "check"
+    value_view: "Doc2Sign"
+  position: 
+    value: "QA Automation"
+  department:
+    value: "Research and Development"
+  workaddress:
+    value: "32/1 อาคาร 3 ชั้น 2 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310"
+  phonenumber:
+    value: "02119{random:digits:4}"
+  mobilenumber:
+    value: "081{random:digits:4}861"
+
+update_allfields:
+  email: 
+    value: "disabled"
+  name: 
+    value: "Xbot{random:lower:3}"
+  lastname: 
+    value: "Testqa{random:lower:3}"
+  status: 
+    value: "check"
+    value_view: "ใช้งาน"
+  doc2signcheck: 
+    value: "check"
+    value_view: "Doc2Sign"
+  etaxcheck: 
+    value: "check"
+    value_view: "E-TAX"  
+  position: 
+    value: "Sales Engineer"
+  department:
+    value: "Sales and Marketing"
+  workaddress:
+    value: "113 อาคาร 1 ฝั่งตะวันตก ถนนสี่พระยา แขวงสี่พระยา เขตบางรัก กรุงเทพมหานคร 10500"
+  phonenumber:
+    value: "02889{random:digits:4}"
+  mobilenumber:
+    value: "091{random:digits:4}112"
+
+requiredfields:
+  email: 
+    value: "robottest{random:lower:3}@mail.com"
+  name: 
+    value: "Robot{random:lower:3}"
+  lastname: 
+    value: "Last{random:lower:3}"
+  status: 
+    value: "check"
+    value_view: "ใช้งาน"
+  doc2signcheck: 
+    value: "check"
+    value_view: "Doc2Sign"
+  
